@@ -13,15 +13,27 @@ async function main() {
   const lendingPool = await getLendingPool(deployer);
   console.log(`LendingPool address: ${lendingPool.address}`);
 
-  // deposit
+  // DEPOSIT WETH to AAVE LENDING POOL
   const wethTokenAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 
   // approve
   await approveERC20(wethTokenAddress, lendingPool.address, AMOUNT, deployer);
-
   console.log("depositing...");
   await lendingPool.deposit(wethTokenAddress, AMOUNT, deployer, 0);
   console.log("deposited");
+
+  // BORROW from AAVE based off DEPOSIT
+  // how much we have borrowed, collatoral, amount to borrow
+
+  let {availableBorrowsETH, totalDebtETH} = await getBorrowUserData(lendingPool, deployer)
+}
+
+async function getBorrowUserData(lendingPool, account) {
+  const { totalCollateralETH, totalDebtETH, availableBorrowsETH} = await lendingPool.getUserAccountData(account)
+  console.log(`You have ${totalCollateralETH} worth of ETH deposited`)
+  console.log(`You have ${totalDebtETH} worth of ETH borrowed `)
+  console.log(`You can borrow ${availableBorrowsETH} worth of ETH`)
+  return { availableBorrowsETH, totalDebtETH}
 }
 
 async function getLendingPool(account) {
