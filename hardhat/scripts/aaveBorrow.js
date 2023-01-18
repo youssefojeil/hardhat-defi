@@ -12,6 +12,10 @@ async function main() {
   // lending pool:
   const lendingPool = await getLendingPool(deployer);
   console.log(`LendingPool address: ${lendingPool.address}`);
+
+  // deposit
+  // approve aave contract
+  const wethTokenAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 }
 
 async function getLendingPool(account) {
@@ -29,6 +33,15 @@ async function getLendingPool(account) {
   );
 
   return lendingPool;
+}
+
+async function approveERC20(
+  contractAddress,
+  spenderAddress,
+  amountToSpend,
+  account
+) {
+  const erc20Token = await ethers.getContractAt("");
 }
 
 main()
