@@ -1,5 +1,5 @@
 const { getNamedAccounts, ethers } = require("hardhat");
-const { getWeth } = require("../scripts/getWeth");
+const { getWeth, AMOUNT } = require("../scripts/getWeth");
 
 async function main() {
   //protocol treats everything as an erc20
@@ -14,8 +14,14 @@ async function main() {
   console.log(`LendingPool address: ${lendingPool.address}`);
 
   // deposit
-  // approve aave contract
   const wethTokenAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+
+  // approve
+  await approveERC20(wethTokenAddress, lendingPool.address, AMOUNT, deployer);
+
+  console.log("depositing...");
+  await lendingPool.deposit(wethTokenAddress, AMOUNT, deployer, 0);
+  console.log("deposited");
 }
 
 async function getLendingPool(account) {
@@ -36,12 +42,20 @@ async function getLendingPool(account) {
 }
 
 async function approveERC20(
-  contractAddress,
+  erc20Address,
   spenderAddress,
   amountToSpend,
   account
 ) {
-  const erc20Token = await ethers.getContractAt("");
+  const erc20Token = await ethers.getContractAt(
+    "IERC20",
+    erc20Address,
+    account
+  );
+
+  const tx = await erc20Token.approve(spenderAddress, amountToSpend);
+  await tx.wait(1);
+  console.log("APPROVED!");
 }
 
 main()
