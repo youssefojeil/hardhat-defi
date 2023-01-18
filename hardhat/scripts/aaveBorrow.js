@@ -10,6 +10,8 @@ async function main() {
 
   // lending pool address provider: 0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5
   // lending pool:
+  const lendingPool = await getLendingPool(deployer);
+  console.log(`LendingPool address: ${lendingPool.address}`);
 }
 
 async function getLendingPool(account) {
@@ -20,7 +22,13 @@ async function getLendingPool(account) {
   );
 
   const lendingPoolAddress = await lendingPoolAddressProvider.getLendingPool();
-  const lendingPool = await ethers.getContractAt("");
+  const lendingPool = await ethers.getContractAt(
+    "ILendingPool",
+    lendingPoolAddress,
+    account
+  );
+
+  return lendingPool;
 }
 
 main()
