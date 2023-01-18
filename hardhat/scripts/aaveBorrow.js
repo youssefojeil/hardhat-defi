@@ -25,15 +25,83 @@ async function main() {
   // BORROW from AAVE based off DEPOSIT
   // how much we have borrowed, collatoral, amount to borrow
 
-  let {availableBorrowsETH, totalDebtETH} = await getBorrowUserData(lendingPool, deployer)
+  let { availableBorrowsETH, totalDebtETH } = await getBorrowUserData(
+    lendingPool,
+    deployer
+  );
+
+  // Get DAI price & amount DAI to borrow
+  const daiPrice = await getDaiPrice();
+  const amountDaiToBorrow =
+    availableBorrowsETH.toString() * 0.95 * (1 / daiPrice.toNumber());
+
+  console.log(`You can borrow ${amountDaiToBorrow} DAI`);
+
+  // convert to Wei
+  const amountDaiToBorrowWei = ethers.utils.parseEther(
+    amountDaiToBorrow.toString()
+  );
+
+  // Borrow DAI
+  const daiTokenAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
+  await borrowDai(daiTokenAddress, lendingPool, amountDaiToBorrowWei, deployer);
+
+  // print user data
+  await getBorrowUserData(lendingPool, deployer);
+
+  // repay
+  await repay(amountDaiToBorrowWei, daiTokenAddress, lendingPool, deployer);
+  await getBorrowUserData(lendingPool, deployer);
+}
+
+async function repay(amount, daiAddress, lendingPool, account) {
+  await approveERC20(daiAddress, lendingPool.address, amount, account);
+  const repayTx = await lendingPool.repay(daiAddress, amount, 1, account);
+  await repayTx.wait(1);
+  console.log("Repaid!");
+}
+
+async function borrowDai(
+  daiAddress,
+  lendingPool,
+  amountDaiToBorrowWei,
+  account
+) {
+  const borrowTx = await lendingPool.borrow(
+    daiAddress,
+    amountDaiToBorrowWei,
+    1,
+    0,
+    account
+  );
+
+  await borrowTx.wait(1);
+
+  console.log("Youve borrwed");
+}
+
+async function getDaiPrice() {
+  const daiEthPriceFeed = await ethers.getContractAt(
+    "AggregatorV3Interface",
+    "0x773616E4d11A78F511299002da57A0a94577F1f4"
+  );
+
+  const price = (await daiEthPriceFeed.latestRoundData())[1];
+
+  console.log(`The DAI/ETH price is ${price.toString()}`);
+  return price;
 }
 
 async function getBorrowUserData(lendingPool, account) {
-  const { totalCollateralETH, totalDebtETH, availableBorrowsETH} = await lendingPool.getUserAccountData(account)
-  console.log(`You have ${totalCollateralETH} worth of ETH deposited`)
-  console.log(`You have ${totalDebtETH} worth of ETH borrowed `)
-  console.log(`You can borrow ${availableBorrowsETH} worth of ETH`)
-  return { availableBorrowsETH, totalDebtETH}
+  const {
+    totalCollateralETH,
+    totalDebtETH,
+    availableBorrowsETH,
+  } = await lendingPool.getUserAccountData(account);
+  console.log(`You have ${totalCollateralETH} worth of ETH deposited`);
+  console.log(`You have ${totalDebtETH} worth of ETH borrowed `);
+  console.log(`You can borrow ${availableBorrowsETH} worth of ETH`);
+  return { availableBorrowsETH, totalDebtETH };
 }
 
 async function getLendingPool(account) {
